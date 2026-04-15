@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocuSmart - 智能文档处理平台</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap');
+        
+        :root {
+            --primary-color: #1E40AF;
+            --secondary-color: #F97316;
+            --background-color: #F9FAFB;
+            --text-color: #1F2937;
+            --light-gray: #E5E7EB;
+            --dark-gray: #4B5563;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            overflow-x: hidden;
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .sidebar {
+            background-color: white;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .main-content {
+            transition: all 0.3s ease;
+        }
+        
+        .control-panel {
+            background-color: white;
+            box-shadow: -2px 0 5px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .upload-area {
+            border: 2px dashed var(--light-gray);
+            transition: all 0.3s ease;
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .upload-area:hover, .upload-area.drag-over {
+            border-color: var(--secondary-color);
+            background-color: rgba(249, 115, 22, 0.05);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background-color: #1E3A8A;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            color: white;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #EA580C;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .task-item {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .task-item:hover {
+            background-color: rgba(30, 64, 175, 0.05);
+        }
+        
+        .task-item.active {
+            background-color: rgba(30, 64, 175, 0.1);
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .progress-bar {
+            height: 6px;
+            background-color: var(--light-gray);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .progress-bar-fill {
+            height: 100%;
+            background-color: var(--secondary-color);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+        
+        .file-item {
+            transition: all 0.3s ease;
+        }
+        
+        .file-item:hover {
+            background-color: rgba(30, 64, 175, 0.05);
+        }
+        
+        .ai-badge {
+            background-color: rgba(30, 64, 175, 0.1);
+            color: var(--primary-color);
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-weight: 500;
+        }
+        
+        .tooltip {
+            position: relative;
+        }
+        
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--dark-gray);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            z-index: 10;
+        }
+        
+        /* 3D Scene Container */
+        #ai-visualization {
+            width: 100%;
+            height: 300px;
+            background-color: rgba(30, 64, 175, 0.05);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        /* Animation Classes */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+        
+        .animate-slide-in {
+            animation: slideIn 0.5s ease forwards;
+        }
+        
+        .animate-pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        /* Responsive Adjustments */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 60px;
+            }
+            
+            .sidebar-text {
+                display: none;
+            }
+            
+            .control-panel {
+                width: 250px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -250px;
+                z-index: 100;
+                height: 100vh;
+            }
+            
+            .sidebar.open {
+                left: 0;
+            }
+            
+            .control-panel {
+                position: fixed;
+                right: -300px;
+                z-index: 100;
+                height: 100vh;
+            }
+            
+            .control-panel.open {
+                right: 0;
+            }
+            
+            .main-content {
+                width: 100%;
+            }
+            
+            .mobile-menu-btn {
+                display: block;
+            }
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--light-gray);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--dark-gray);
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-color);
+        }
+        
+        /* Loading Animation */
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(30, 64, 175, 0.1);
+            border-left-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Document Preview Styles */
+        .document-preview {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+        
+        .document-preview-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1rem;
+            font-weight: 500;
+        }
+        
+        .document-preview-content {
+            padding: 1rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        /* AI Analysis Result Styles */
+        .ai-result-card {
+            border-left: 4px solid var(--primary-color);
+            padding-left: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .ai-result-title {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Notification Styles */
+        .notification {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.success {
+            background-color: #D1FAE5;
+            color: #065F46;
+            border-left: 4px solid #059669;
+        }
+        
+        .notification.error {
+            background-color: #FEE2E2;
+            color: #991B1B;
+            border-left: 4px solid #DC2626;
+        }
+        
+        .notification.info {
+            background-color: #DBEAFE;
+            color: #1E40AF;
+            border-left: 4px solid #2563EB;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- App Container -->
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <!-- Sidebar -->
+        <aside class="sidebar w-64 flex-shrink-0 p-4 flex flex-col">
+            <!-- Logo -->
+            <div class="flex items-center mb-8">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center mr-3">
+                    <i class="fas fa-file-alt text-white text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-blue-800">DocuSmart</h1>
+                    <p class="text-xs text-gray-500 sidebar-text">智能文档处理平台</p>
+                </div>
+            </div>
+            
+            <!-- Navigation -->
+            <nav class="flex-1">
+                <ul>
+                    <li class="mb-2">
+                        <a href="#" class="flex items-center p-3 rounded-lg bg-blue-50 text-blue-800">
+                            <i class="fas fa-home w-6 text-center"></i>
+                            <span class="ml-3 sidebar-text">首页</span>
+                        </a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="#" class="flex items-center p-3 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-file-upload w-6 text-center"></i>
+                            <span class="ml-3 sidebar-text">上传文档</span>
+                        </a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="#" class="flex items-center p-3 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-history w-6 text-center"></i>
+                            <span class="ml-3 sidebar-text">处理历史</span>
+                        </a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="#" class="flex items-center p-3 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-star w-6 text-center"></i>
+                            <span class="ml-3 sidebar-text">收藏文档</span>
+                        </a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="#" class="flex items-center p-3 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-cog w-6 text-center"></i>
+                            <span class="ml-3 sidebar-text">设置</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            
+            <!-- User Profile -->
+            <div class="mt-auto pt-4 border-t border-gray-200">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                        <i class="fas fa-user text-blue-600"></i>
+                    </div>
+                    <div class="sidebar-text">
+                        <p class="font-medium">用户名</p>
+                        <p class="text-xs text-gray-500">高级用户</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content flex-1 p-6 overflow-y-auto">
+            <!-- Mobile Menu Button -->
+            <button class="mobile-menu-btn md:hidden mb-4 p-2 rounded-lg bg-gray-100 hover:bg-gray-200">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <!-- Page Title -->
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold">欢迎使用 DocuSmart</h2>
+                <p class="text-gray-600">智能文档处理平台，让您的工作更高效</p>
+            </div>
+            
+            <!-- Upload Area -->
+            <div class="upload-area rounded-lg p-8 text-center mb-8 animate-fade-in" id="upload-area">
+                <img src="https://p11-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/9844aeef6fd846a694d2e49909fc9f16~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=20260415121737FA3F18E5C103A0A34D55&rrcfp=f06b921b&x-expires=1778818696&x-signature=%2B46pmjZcmvS9DW25SvDYgudxJVI%3D" alt="Upload Icon" class="w-32 h-32 mx-auto mb-4">
+                <h3 class="text-xl font-semibold mb-2">拖放文件到此处</h3>
+                <p class="text-gray-600 mb-4">支持 PDF, DOCX, TXT, PPTX 等多种格式</p>
+                <label class="btn-secondary inline-block py-2 px-6 rounded-lg cursor-pointer">
+                    <span>选择文件</span>
+                    <input type="file" id="file-input" class="hidden" multiple accept=".pdf,.docx,.txt,.pptx,.xlsx">
+                </label>
+            </div>
+            
+            <!-- Recent Files -->
+            <div class="mb-8">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">最近上传的文件</h3>
+                    <a href="#" class="text-blue-600 hover:text-blue-800 text-sm">查看全部</a>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- File Item 1 -->
+                    <div class="file-item card p-4 flex items-center">
+                        <div class="w-12 h-12 rounded-lg bg-red-100 flex items-center justify-center mr-4">
+                            <i class="fas fa-file-pdf text-red-600 text-xl"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-medium truncate">项目计划书.pdf</h4>
+                            <p class="text-xs text-gray-500">2.5 MB · 2分钟前</p>
+                        </div>
+                        <div class="flex items-center">
+                            <button class="p-2 text-gray-500 hover:text-blue-600">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- File Item 2 -->
+                    <div class="file-item card p-4 flex items-center">
+                        <div class="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center mr-4">
+                            <i class="fas fa-file-word text-blue-600 text-xl"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-medium truncate">会议记录.docx</h4>
+                            <p class="text-xs text-gray-500">1.8 MB · 昨天</p>
+                        </div>
+                        <div class="flex items-center">
+                            <button class="p-2 text-gray-500 hover:text-blue-600">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- File Item 3 -->
+                    <div class="file-item card p-4 flex items-center">
+                        <div class="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center mr-4">
+                            <i class="fas fa-file-excel text-green-600 text-xl"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-medium truncate">财务报表.xlsx</h4>
+                            <p class="text-xs text-gray-500">3.2 MB · 3天前</p>
+                        </div>
+                        <div class="flex items-center">
+                            <button class="p-2 text-gray-500 hover:text-blue-600">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- AI Features Preview -->
+            <div class="mb-8">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">AI 智能功能</h3>
+                    <a href="#" class="text-blue-600 hover:text-blue-800 text-sm">了解更多</a>
+                </div>
+                
+                <div class="card p-6">
+                    <div class="flex flex-col md:flex-row items-center">
+                        <div class="md:w-1/2 mb-6 md:mb-0 md:pr-6">
+                            <h4 class="text-xl font-bold mb-3">智能文档分析</h4>
+                            <p class="text-gray-600 mb-4">利用 AI 技术自动识别文档结构，提取关键信息，生成摘要和关键词，让您快速掌握文档核心内容。</p>
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                <span class="ai-badge">智能分类</span>
+                                <span class="ai-badge">摘要生成</span>
+                                <span class="ai-badge">关键信息提取</span>
+                                <span class="ai-badge">情感分析</span>
+                            </div>
+                            <button class="btn-secondary py-2 px-6 rounded-lg">
+                                立即体验
+                            </button>
+                        </div>
+                        <div class="md:w-1/2">
+                            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/f1776b16874948578f14d54a923aa5f2~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=20260415121737FA3F18E5C103A0A34D55&rrcfp=f06b921b&x-expires=1778818697&x-signature=GizEMxMnEIqz0eI2TYiUl82zD%2Bs%3D" alt="AI Analysis" class="rounded-lg shadow-lg w-full">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Processing History -->
+            <div>
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">最近处理记录</h3>
+                    <a href="#" class="text-blue-600 hover:text-blue-800 text-sm">查看全部</a>
+                </div>
+                
+                <div class="card overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">文件名</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">处理类型</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">时间</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 rounded bg-red-100 flex items-center justify-center mr-3">
+                                            <i class="fas fa-file-pdf text-red-600"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">项目计划书.pdf</div>
+                                            <div class="text-xs text-gray-500">2.5 MB</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">PDF 转 Word</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        成功
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    2分钟前
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <a href="#" class="text-blue-600 hover:text-blue-900 mr-3">下载</a>
+                                    <a href="#" class="text-gray-600 hover:text-gray-900">查看</a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 rounded bg-blue-100 flex items-center justify-center mr-3">
+                                            <i class="fas fa-file-word text-blue-600"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">会议记录.docx</div>
+                                            <div class="text-xs text-gray-500">1.8 MB</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">
+                                        <span class="ai-badge mr-1">AI</span> 摘要生成
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        成功
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    昨天
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <a href="#" class="text-blue-600 hover:text-blue-900 mr-3">下载</a>
+                                    <a href="#" class="text-gray-600 hover:text-gray-900">查看</a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 rounded bg-green-100 flex items-center justify-center mr-3">
+                                            <i class="fas fa-file-excel text-green-600"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">财务报表.xlsx</div>
+                                            <div class="text-xs text-gray-500">3.2 MB</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">Excel 转 PDF</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                        处理中
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    3天前
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <a href="#" class="text-gray-400 cursor-not-allowed mr-3">下载</a>
+                                    <a href="#" class="text-gray-600 hover:text-gray-900">查看</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Control Panel -->
+        <aside class="control-panel w-80 flex-shrink-0 p-4 overflow-y-auto">
+            <!-- Mobile Panel Toggle -->
+            <button class="mobile-panel-toggle md:hidden mb-4 p-2 rounded-lg bg-gray-100 hover:bg-gray-200">
+                <i class="fas fa-sliders-h"></i>
+            </button>
+            
+            <!-- Panel Title -->
+            <h3 class="text-lg font-semibold mb-4">处理任务</h3>
+            
+            <!-- Task Categories -->
+            <div class="mb-6">
+                <h4 class="text-sm font-medium text-gray-500 mb-2">基础转换</h4>
+                <ul>
+                    <li class="task-item p-3 rounded-lg mb-1 flex items-center">
+                        <i class="fas fa-file-pdf text-red-500 mr-3"></i>
+                        <span>PDF 转 Word</span>
+                    </li>
+                    <li class="task-item p-3 rounded-lg mb-1 flex items-center">
+                        <i class="fas fa-file-word text-blue-500 mr-3"></i>
+                        <span>Word 转 PDF</span>
+                    </li>
+                    <li class="task-item p-3 rounded-lg mb-1 flex items-center">
+                        <i class="fas fa-file-image text-green-500 mr-3"></i>
+                        <span>图片转 PDF</span>
+                    </li>
+                    <li class="task-item p-3 rounded-lg mb-1 flex items-center">
+                        <i class="fas fa-file-excel text-green-500 mr-3"></i>
+                        <span>Excel 转 PDF</span>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="mb-6">
+                <h4 class="text-sm font-medium text-gray-500 mb-2">文档处理</h4>
+                <ul>
+                    <li class="task-item p-3 rounded-lg mb-1 flex items-center">
+                        <i class="fas fa-file-merge text-purple-500 mr-3"></i>
+                        <span>合并文档</span>
+                    </li>
+                    <li class="task-item p-3 rounded-lg mb-1 flex items-center">
+                        <i class="fas fa-file-alt text-orange-500 mr-3"></i>
+                        <span>拆分文档</span>
+                    </li>
+                    <li class="task-item p-3 rounded-lg mb-1 flex items-center">
+                        <i class="fas fa-compress-alt text-blue-500 mr-3"></i>
+                        <span>压缩 PDF</span>
+                    </li>
+                    <li class="task-item p-3 rounded-lg mb-1 flex items-center">
+                        <i class="fas fa-lock text-gray-500 mr-3"></i>
+                        <span>加密 PDF</span>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="mb-6">
+                <h4 class="text-sm font-medium text-gray-500 mb-2">
+                    <span class="ai-badge mr-1">AI</span> 智能功能
+                </h4>
+                <ul>
+                    <li class="task-item p-3 rounded-lg mb-1 flex items-center">
+                        <i class="fas fa-brain text-blue-500 mr-3"></i>
+                        <span>文档摘要</span>
+                    </li>
+                    <li class="task-item p-3 rounded-lg mb-1 flex items-center">
+                        <i class="fas fa-tags text-yellow-500 mr-3"></i>
+                        <span>关键词提取</span>
+                    </li>
+                    <li class="task-item p-3 rounded-lg mb-1 flex items-center">
+                        <i class="fas fa-sitemap text-green-500 mr-3"></i>
+                        <span>结构分析</span>
+                    </li>
+                    <li class="task-item p-3 rounded-lg mb-1 flex items-center">
+                        <i class="fas fa-language text-purple-500 mr-3"></i>
+                        <span>智能翻译</span>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Processing Options -->
+            <div class="mb-6">
+                <h4 class="text-sm font-medium text-gray-500 mb-2">处理选项</h4>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">输出格式</label>
+                    <select class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option>PDF</option>
+                        <option>Word</option>
+                        <option>Excel</option>
+                        <option>Text</option>
+                        <option>JPG</option>
+                    </select>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">页面范围</label>
+                    <div class="flex items-center">
+                        <input type="text" placeholder="全部" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">质量设置</label>
+                    <div class="flex items-center">
+                        <input type="range" min="1" max="10" value="8" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>低</span>
+                        <span>高</span>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="flex items-center">
+                        <input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600">
+                        <span class="ml-2 text-sm text-gray-700">保留原始格式</span>
+                    </label>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="flex items-center">
+                        <input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600">
+                        <span class="ml-2 text-sm text-gray-700">自动保存到云端</span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="flex space-x-3">
+                <button class="btn-primary flex-1 py-2 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-play mr-2"></i>
+                    开始处理
+                </button>
+                <button class="btn-secondary py-2 px-4 rounded-lg">
+                    <i class="fas fa-save"></i>
+                </button>
+            </div>
+        </aside>
+    </div>
+    
+    <!-- Document Preview Modal -->
+    <div id="preview-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            <div class="document-preview-header flex justify-between items-center">
+                <h3 class="text-lg font-semibold">文档预览</h3>
+                <button id="close-preview" class="text-white hover:text-gray-200">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="document-preview-content">
+                <div class="mb-4">
+                    <div class="flex items-center mb-2">
+                        <div class="w-8 h-8 rounded bg-red-100 flex items-center justify-center mr-3">
+                            <i class="fas fa-file-pdf text-red-600"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-medium">项目计划书.pdf</h4>
+                            <p class="text-xs text-gray-500">2.5 MB · PDF 文档</p>
+                        </div>
+                    </div>
+                    <div class="border rounded-lg overflow-hidden">
+                        <div class="bg-gray-100 p-4 text-center">
+                            <p class="text-gray-500">PDF 预览不可用，请下载查看</p>
+                            <button class="mt-3 btn-primary py-1 px-4 rounded-lg text-sm">
+                                <i class="fas fa-download mr-1"></i> 下载
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h4 class="font-medium mb-2">文档信息</h4>
+                    <div class="bg-gray-50 p-3 rounded-lg text-sm">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <span class="text-gray-500">创建时间:</span>
+                                <span>2023-06-15 14:30</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">修改时间:</span>
+                                <span>2023-06-18 09:45</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">页数:</span>
+                                <span>24</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">作者:</span>
+                                <span>张三</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="font-medium mb-2">AI 智能分析</h4>
+                    <div class="space-y-3">
+                        <div class="ai-result-card">
+                            <div class="ai-result-title">文档类型</div>
+                            <p class="text-sm">项目计划书 (置信度: 98%)</p>
+                        </div>
+                        <div class="ai-result-card">
+                            <div class="ai-result-title">关键主题</div>
+                            <div class="flex flex-wrap gap-1">
+                                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">项目管理</span>
+                                <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">时间规划</span>
+                                <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">资源分配</span>
+                                <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">风险管理</span>
+                            </div>
+                        </div>
+                        <div class="ai-result-card">
+                            <div class="ai-result-title">摘要</div>
+                            <p class="text-sm">本文档是一份项目计划书，详细描述了项目背景、目标、范围、时间线、资源需求和风险管理策略。项目预计历时6个月，需要跨部门协作完成。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Processing Modal -->
+    <div id="processing-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg w-full max-w-md p-6">
+            <div class="text-center mb-6">
+                <div class="loading-spinner mx-auto mb-4"></div>
+                <h3 class="text-lg font-semibold">正在处理文档</h3>
+                <p class="text-gray-600">请稍候，正在进行 PDF 转 Word 转换...</p>
+            </div>
+            <div class="mb-4">
+                <div class="flex justify-between text-sm mb-1">
+                    <span>处理进度</span>
+                    <span id="progress-percentage">45%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-bar-fill" style="width: 45%"></div>
+                </div>
+            </div>
+            <div class="text-center text-sm text-gray-500">
+                <p>预计剩余时间: 约 15 秒</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- AI Visualization Modal -->
+    <div id="ai-visualization-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            <div class="document-preview-header flex justify-between items-center">
+                <h3 class="text-lg font-semibold">AI 文档结构分析</h3>
+                <button id="close-ai-visualization" class="text-white hover:text-gray-200">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-4">
+                <div id="ai-visualization" class="mb-4"></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <h4 class="font-medium mb-2">文档结构</h4>
+                        <ul class="space-y-1 text-sm">
+                            <li class="flex items-center">
+                                <i class="fas fa-file-alt text-blue-500 mr-2"></i>
+                                <span>1. 执行摘要</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-file-alt text-blue-500 mr-2"></i>
+                                <span>2. 项目背景</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-file-alt text-blue-500 mr-2"></i>
+                                <span>3. 目标与范围</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-file-alt text-blue-500 mr-2"></i>
+                                <span>4. 实施计划</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-file-alt text-blue-500 mr-2"></i>
+                                <span>5. 资源需求</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-file-alt text-blue-500 mr-2"></i>
+                                <span>6. 风险管理</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-file-alt text-blue-500 mr-2"></i>
+                                <span>7. 结论与建议</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-medium mb-2">关键指标</h4>
+                        <div class="space-y-3">
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>文档完整性</span>
+                                    <span>92%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-bar-fill" style="width: 92%; background-color: #10B981;"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>结构合理性</span>
+                                    <span>85%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-bar-fill" style="width: 85%; background-color: #3B82F6;"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>内容相关性</span>
+                                    <span>78%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-bar-fill" style="width: 78%; background-color: #F59E0B;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notifications -->
+    <div id="notification" class="notification">
+        <div class="flex items-center">
+            <i id="notification-icon" class="fas fa-check-circle mr-3"></i>
+            <div>
+                <p id="notification-title" class="font-medium"></p>
+                <p id="notification-message" class="text-sm"></p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // DOM Elements
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const previewModal = document.getElementById('preview-modal');
+        const closePreview = document.getElementById('close-preview');
+        const processingModal = document.getElementById('processing-modal');
+        const progressPercentage = document.getElementById('progress-percentage');
+        const progressBarFill = document.querySelector('.progress-bar-fill');
+        const aiVisualizationModal = document.getElementById('ai-visualization-modal');
+        const closeAiVisualization = document.getElementById('close-ai-visualization');
+        const notification = document.getElementById('notification');
+        const notificationTitle = document.getElementById('notification-title');
+        const notificationMessage = document.getElementById('notification-message');
+        const notificationIcon = document.getElementById('notification-icon');
+        const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+        const mobilePanelToggle = document.querySelector('.mobile-panel-toggle');
+        const sidebar = document.querySelector('.sidebar');
+        const controlPanel = document.querySelector('.control-panel');
+        const taskItems = document.querySelectorAll('.task-item');
+        const fileItems = document.querySelectorAll('.file-item');
+        
+        // Drag & Drop Functionality
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('drag-over');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            
+            if (e.dataTransfer.files.length) {
+                handleFiles(e.dataTransfer.files);
+            }
+        });
+        
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length) {
+                handleFiles(fileInput.files);
+            }
+        });
+        
+        // Handle Files
+        function handleFiles(files) {
+            showNotification('success', '文件上传成功', `已成功上传 ${files.length} 个文件`);
+            
+            // Simulate file processing
+            setTimeout(() => {
+                showProcessingModal();
+                simulateProgress();
+            }, 1000);
+        }
+        
+        // Show Processing Modal
+        function showProcessingModal() {
+            processingModal.classList.remove('hidden');
+        }
+        
+        // Hide Processing Modal
+        function hideProcessingModal() {
+            processingModal.classList.add('hidden');
+        }
+        
+        // Simulate Progress
+        function simulateProgress() {
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 10;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    
+                    setTimeout(() => {
+                        hideProcessingModal();
+                        showNotification('success', '处理完成', '文档已成功转换为 Word 格式');
+                    }, 500);
+                }
+                
+                progressPercentage.textContent = `${Math.round(progress)}%`;
+                progressBarFill.style.width = `${progress}%`;
+            }, 300);
+        }
+        
+        // Show Notification
+        function showNotification(type, title, message) {
+            notificationTitle.textContent = title;
+            notificationMessage.textContent = message;
+            
+            notification.className = 'notification';
+            notification.classList.add(type);
+            
+            if (type === 'success') {
+                notificationIcon.className = 'fas fa-check-circle mr-3';
+            } else if (type === 'error') {
+                notificationIcon.className = 'fas fa-times-circle mr-3';
+            } else if (type === 'info') {
+                notificationIcon.className = 'fas fa-info-circle mr-3';
+            }
+            
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 5000);
+        }
+        
+        // Preview Modal
+        closePreview.addEventListener('click', () => {
+            previewModal.classList.add('hidden');
+        });
+        
+        // AI Visualization Modal
+        closeAiVisualization.addEventListener('click', () => {
+            aiVisualizationModal.classList.add('hidden');
+        });
+        
+        // Mobile Menu Toggle
+        mobileMenuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+        });
+        
+        mobilePanelToggle.addEventListener('click', () => {
+            controlPanel.classList.toggle('open');
+        });
+        
+        // Task Items Click
+        taskItems.forEach(item => {
+            item.addEventListener('click', () => {
+                taskItems.forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+            });
+        });
+        
+        // File Items Click
+        fileItems.forEach(item => {
+            item.addEventListener('click', () => {
+                previewModal.classList.remove('hidden');
+            });
+        });
+        
+        // Initialize Three.js Scene
+        function initThreeScene() {
+            const container = document.getElementById('ai-visualization');
+            
+            // Create scene
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf8fafc);
+            
+            // Create camera
+            const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.z = 5;
+            
+            // Create renderer
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+            
+            // Create lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(1, 1, 1);
+            scene.add(directionalLight);
+            
+            // Create document geometry
+            const documents = [];
+            const documentColors = [0x1E40AF, 0xF97316, 0x10B981, 0x8B5CF6, 0xF59E0B];
+            
+            for (let i = 0; i < 5; i++) {
+                const geometry = new THREE.BoxGeometry(1, 1.4, 0.1);
+                const material = new THREE.MeshPhongMaterial({ 
+                    color: documentColors[i],
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const document = new THREE.Mesh(geometry, material);
+                
+                document.position.x = (Math.random() - 0.5) * 3;
+                document.position.y = (Math.random() - 0.5) * 3;
+                document.position.z = (Math.random() - 0.5) * 0.5;
+                
+                document.rotation.x = (Math.random() - 0.5) * 0.3;
+                document.rotation.y = (Math.random() - 0.5) * 0.3;
+                
+                scene.add(document);
+                documents.push(document);
+            }
+            
+            // Create connection lines
+            const lineMaterial = new THREE.LineBasicMaterial({ color: 0x1E40AF, transparent: true, opacity: 0.3 });
+            
+            for (let i = 0; i < documents.length; i++) {
+                for (let j = i + 1; j < documents.length; j++) {
+                    const points = [];
+                    points.push(documents[i].position);
+                    points.push(documents[j].position);
+                    
+                    const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
+                    const line = new THREE.Line(lineGeometry, lineMaterial);
+                    scene.add(line);
+                }
+            }
+            
+            // Animation
+            function animate() {
+                requestAnimationFrame(animate);
+                
+                documents.forEach(doc => {
+                    doc.rotation.x += 0.005;
+                    doc.rotation.y += 0.005;
+                });
+                
+                renderer.render(scene, camera);
+            }
+            
+            animate();
+            
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            });
+        }
+        
+        // Initialize AI Visualization when modal is opened
+        document.querySelector('.task-item').addEventListener('click', () => {
+            setTimeout(() => {
+                if (!aiVisualizationModal.classList.contains('hidden')) {
+                    initThreeScene();
+                }
+            }, 100);
+        });
+        
+        // Show AI Visualization Modal
+        document.querySelector('.task-item:nth-child(3)').addEventListener('click', () => {
+            aiVisualizationModal.classList.remove('hidden');
+        });
+        
+        // Initialize Chart.js for AI Analysis Results
+        function initCharts() {
+            // This would be implemented if we had actual chart data
+            // For now, we'll just leave this function as a placeholder
+        }
+        
+        // Initialize the application
+        function initApp() {
+            // Add any initialization code here
+            console.log('DocuSmart initialized');
+        }
+        
+        // Call initApp when DOM is loaded
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
